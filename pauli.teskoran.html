@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>CBT Tes Sikap Kerja - Persona Research & Consulting</title>
+<style>
+    :root{--bg:#f4f7fb;--card:#fff;--primary:#1e88e5;--danger:#d32f2f;--muted:#6b7280}
+    body{margin:0;font-family:Arial,sans-serif;background:var(--bg);user-select:none;-webkit-user-select:none}
+    header{background:linear-gradient(135deg,#1e88e5,#1565c0);color:#fff;padding:16px;text-align:center;position:relative}
+    header::after{content:'Persona Research & Consulting';position:absolute;bottom:6px;right:12px;font-size:11px;opacity:.25}
+    .container{max-width:1100px;margin:20px auto;padding:12px}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.08);padding:20px}
+    .meta{display:flex;justify-content:space-between;flex-wrap:wrap;font-size:14px}
+    .timer{font-weight:bold}
+    .table{display:grid;grid-template-columns:1fr 360px 1fr;gap:12px;margin-top:16px;align-items:flex-start}
+    .col{border:1px solid #e5e7eb;background:#fafafa;overflow:hidden;position:relative;height:500px}
+    .col-inner{display:grid;grid-template-rows:repeat(150,1fr);position:relative;transition:transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67)}
+    .col.inactive{opacity:.3}
+    .col.activeCol{outline:3px solid #1e88e5;background:#fff}
+    .cell{padding:12px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;font-size:22px;color:#333}
+    .cell.focus{background:#e3f2fd}
+    .cell.focus>div{color:#1e88e5;transform:scale(1.1)}
+    #keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto}
+    .btn{padding:18px 0;border:none;border-radius:14px;cursor:pointer;font-size:20px;font-weight:bold}
+    .keypad-btn{background:linear-gradient(135deg,#42a5f5,#1e88e5);color:#fff;box-shadow:0 5px 0 #1565c0}
+    .keypad-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1565c0}
+    .btn-danger{background:var(--danger);color:#fff;width:100%}
+    .result-page{display:none}
+    .score{font-size:32px;font-weight:bold;color:red;margin:15px 0}
+    footer{text-align:center;margin:24px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body oncontextmenu="return false">
+
+<div id="app">
+<header>
+  <h2>CBT Tes Sikap Kerja</h2>
+  <div class="meta">
+    <div>WA: <b>0877 425 5786</b></div>
+    <div class="timer">Kolom <span id="col">1</span>/20 — Sisa Kolom: <span id="time">03:00</span></div>
+  </div>
+</header>
+
+<div class="container"><div class="card">
+<p><b>Instruksi:</b> Jumlahkan angka atas dan bawah, masukkan digit terakhir (Contoh: 8+7=15, tekan 5).</p>
+<div class="table">
+  <div id="colLeft" class="col"></div>
+  <div class="keypad-slot">
+    <div id="keypad">
+        <script>
+            for(let i=1; i<=9; i++) document.write(`<button class="btn keypad-btn" onclick="pressKey(${i})">${i}</button>`);
+        </script>
+        <button class="btn keypad-btn" style="grid-column:2" onclick="pressKey(0)">0</button>
+    </div>
+    <div style="margin-top:20px; text-align:center; color:var(--muted)">Sisa Waktu Total: <span id="timeTotal">60:00</span></div>
+  </div>
+  <div id="colRight" class="col"></div>
+</div>
+<button class="btn btn-danger" style="margin-top:20px" onclick="finish()">Selesai & Kirim Hasil</button>
+</div></div>
+</div>
+
+<div id="resultPage" class="result-page container">
+  <div class="card">
+    <h2>Laporan Analisis Psikogram</h2>
+    <div id="summaryTable"></div>
+    <div class="score" id="score"></div>
+    <div id="detail" style="line-height:1.6"></div>
+    <hr>
+    <div id="interpretasi"></div>
+    <canvas id="pauliChart" width="800" height="300" style="margin-top:20px; width:100%"></canvas>
+  </div>
+</div>
+
+<footer>Persona Research & Consulting</footer>
+
+<script>
+// --- CORE LOGIC ---
+let currentCol = 0, timeLeft = 180, totalLeft = 3600;
+let correct = 0, wrong = 0, perKolom = Array(20).fill(0), perKolomWrong = Array(20).fill(0);
+let dataCols = [], timerId = null, activeCell = null;
+
+// Langsung inisialisasi tes tanpa login
+window.onload = () => {
+    initTest();
+};
+
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey && (e.key === 'u' || e.key === 's' || e.key === 'i' || e.key === 'j')) e.preventDefault();
+    if (e.key === 'F12') e.preventDefault();
+});
+
+function initTest() {
+    for (let c = 0; c < 20; c++) {
+        let col = [];
+        for (let r = 0; r < 151; r++) col.push(Math.floor(Math.random() * 9) + 1);
+        dataCols.push(col);
+    }
+    renderCols();
+    setActiveCell(0, 0);
+    startTimer();
+}
+
+function renderCols() {
+    colLeft.innerHTML = ''; colRight.innerHTML = '';
+    fillCol(colLeft, currentCol, true);
+    if (currentCol < 19) fillCol(colRight, currentCol + 1, false);
+}
+
+function fillCol(container, idx, active) {
+    container.className = 'col ' + (active ? 'activeCol' : 'inactive');
+    const inner = document.createElement('div');
+    inner.className = 'col-inner';
+    for (let r = 0; r < 150; r++) {
+        const d = document.createElement('div');
+        d.className = 'cell';
+        d.dataset.sum = (dataCols[idx][r] + dataCols[idx][r+1]) % 10;
+        d.innerHTML = `<div>${dataCols[idx][r]}</div><div>${dataCols[idx][r+1]}</div>`;
+        inner.appendChild(d);
+    }
+    container.appendChild(inner);
+}
+
+function setActiveCell(col, row) {
+    const cells = document.querySelectorAll('.activeCol .cell');
+    if (activeCell) activeCell.classList.remove('focus');
+    activeCell = cells[row];
+    if (activeCell) {
+        activeCell.classList.add('focus');
+        const h = activeCell.offsetHeight;
+        activeCell.parentElement.style.transform = `translateY(${-row * h}px)`;
+    }
+}
+
+function pressKey(num) {
+    const target = parseInt(activeCell.dataset.sum);
+    const row = parseInt(Array.from(activeCell.parentElement.children).indexOf(activeCell));
+    
+    if (num !== target) perKolomWrong[currentCol]++;
+    perKolom[currentCol]++;
+    
+    if (row < 149) {
+        setActiveCell(currentCol, row + 1);
+    } else {
+        nextColumn();
+    }
+}
+
+function nextColumn() {
+    currentCol++;
+    if (currentCol >= 20) return finish();
+    timeLeft = 180;
+    renderCols();
+    setActiveCell(currentCol, 0);
+}
+
+function startTimer() {
+    timerId = setInterval(() => {
+        timeLeft--; totalLeft--;
+        time.textContent = `${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`;
+        timeTotal.textContent = `${Math.floor(totalLeft/60)}:${(totalLeft%60).toString().padStart(2,'0')}`;
+        col.textContent = currentCol + 1;
+        if (timeLeft <= 0) nextColumn();
+        if (totalLeft <= 0) finish();
+    }, 1000);
+}
+
+function finish() {
+    clearInterval(timerId);
+    document.getElementById('app').style.display = 'none';
+    resultPage.style.display = 'block';
+    
+    const total = perKolom.reduce((a, b) => a + b, 0);
+    const w = perKolomWrong.reduce((a, b) => a + b, 0);
+    const avg = total / 20;
+    
+    score.textContent = `Total Input: ${total}`;
+    detail.innerHTML = `
+        Benar: <b>${total - w}</b> | Salah/Lupa: <b>${w}</b><br>
+        Kecepatan Rata-rata: <b>${avg.toFixed(1)}</b> angka/kolom<br>
+        Daya Tahan: <b>${((perKolom[19]/perKolom[0])*100).toFixed(1)}%</b> stabilitas akhir.
+    `;
+    drawChart();
+}
+
+function drawChart() {
+    const canvas = document.getElementById('pauliChart');
+    const ctx = canvas.getContext('2d');
+    const max = Math.max(...perKolom) + 5;
+    const w = canvas.width, h = canvas.height;
+    
+    ctx.clearRect(0, 0, w, h);
+    ctx.beginPath();
+    ctx.strokeStyle = '#1e88e5';
+    ctx.lineWidth = 3;
+    perKolom.forEach((val, i) => {
+        const x = (i * (w/20)) + 20;
+        const y = h - (val/max * h) + 20;
+        if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+}
+</script>
+</body>
+</html>

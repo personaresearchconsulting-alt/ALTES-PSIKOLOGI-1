@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Five Inventory - Persona Research & Consulting</title>
+    <style>
+        :root { --primary: #000000; --accent: #333; --bg: #f4f4f4; --white: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; }
+        #quiz-container { width: 100%; max-width: 800px; background: var(--white); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 10px solid var(--primary); margin-top: 20px; box-sizing: border-box; }
+        .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 30px; }
+        .question-text { font-size: 1.3em; font-weight: 600; color: var(--primary); text-align: center; margin-bottom: 30px; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+        .opt-container { display: flex; flex-direction: column; gap: 10px; }
+        .option { width: 100%; padding: 15px; text-align: left; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 1em; transition: 0.2s; background: #fff; display: flex; align-items: center; }
+        .option:hover { background: #f9f9f9; border-color: #999; }
+        .option.selected { background: #333; color: #fff; border-color: #333; }
+        .opt-num { font-weight: bold; margin-right: 15px; width: 25px; }
+        .nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); gap: 5px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        .grid-item { height: 25px; display: flex; align-items: center; justify-content: center; background: #eee; border-radius: 4px; font-size: 10px; cursor: pointer; }
+        .grid-item.filled { background: #000; color: white; }
+        .grid-item.current { border: 2px solid #555; font-weight: bold; }
+        .btn { background: #000; color: #fff; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 20px; font-size: 1em; text-transform: uppercase; }
+        .instruction-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 5px solid #000; font-size: 0.9em; margin-bottom: 20px; line-height: 1.5; }
+        input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; text-align: center; font-size: 1em; box-sizing: border-box; }
+        .question-box { display: none; }
+        .question-box.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+<div id="quiz-container">
+    <div class="header">
+        <h2 style="margin:0;">Big Five Inventory (BFI)</h2>
+        <p style="margin:5px 0; color:#666; font-size: 0.9em;">Persona Research & Consulting</p>
+    </div>
+
+    <div id="login-screen">
+        <div class="instruction-box">
+            Pilihlah jawaban yang paling menggambarkan diri Anda:<br>
+            1 = Sangat Tidak Sesuai | 2 = Tidak Sesuai | 3 = Netral | 4 = Sesuai | 5 = Sangat Sesuai
+        </div>
+        <input type="text" id="user-name" placeholder="Nama Lengkap Peserta...">
+        <button class="btn" onclick="startTest()">Mulai Tes</button>
+    </div>
+
+    <div id="test-content" style="display:none">
+        <div id="q-wrapper"></div>
+        <div class="nav-grid" id="q-grid"></div>
+        <button id="finish-btn" class="btn" style="display:none; background:#28a745;" onclick="checkFinish()">Selesai & Rekap Jawaban</button>
+    </div>
+
+    <div id="result-screen" style="display:none; text-align:center;">
+        <h3>Tes Selesai</h3>
+        <p>Silakan unduh rekap jawaban Anda dan kirimkan ke Admin.</p>
+        <button class="btn" onclick="downloadTXT()">Unduh Rekap (.TXT)</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        "Aktif Berbicara", "Mencari Kelemahan Orang Lain", "Mengerjakan Tugas dengan Serius", "Merasa Tertekan", "Orang Unik yang Penuh dengan Gagasan Baru",
+        "Suka Menyendiri", "Suka Menolong dan Tidak Iri pada Orang Lain", "Bertindak Asal-asalan", "Orang yang Santai dan Mampu Mengatasi Stres", "Memiliki Rasa Ingin Tahu Terhadap Sesuatu yang Baru",
+        "Penuh Energi", "Suka Memulai Pertengkaran dengan Orang Lain", "Bisa Diandalkan dalam Bekerja", "Sering Merasa Tegang", "Pandai Menghargai Hal-hal Penting",
+        "Memiliki Antusiasme yang Tinggi", "Memiliki Sifat Pemaaf", "Cenderung Kurang Teratur", "Sering Merasa Khawatir", "Memiliki Imajinasi yang Aktif",
+        "Cenderung Pendiam", "Secara Umum Dapat Dipercaya", "Cenderung Pemalas", "Memiliki Perasaan yang Stabil dan Tidak Mudah Sedih", "Kreatif",
+        "Terbuka", "Dingin dan Kurang Bersahabat", "Dapat Memusatkan Diri Pada Pekerjaan", "Dipengaruhi Oleh Suasana Hati", "Menyukai Artistik dan Estetika",
+        "Orang Yang Pemalu", "Ramah dan Penuh Perhatian", "Melakukan Sesuatu Dengan Efisien", "Tetap Tenang Walaupun Berada Dalam Tekanan", "Lebih Memilih Pekerjaan Yang Rutin",
+        "Mudah Bergaul", "Kadang-kadang Bersikap Kasar Kepada Orang Lain", "Membuat Rencana Dan Melaksanakannya", "Mudah Gugup", "Suka Berpikir Serta Bermain Dengan Ide-ide",
+        "Minat Terhadap Seni Tidak Terlalu Besar", "Suka Bekerja Sama Dengan Orang Lain", "Mudah Terganggu Konsentrasinya", "Memiliki Pengetahuan Luas Dalam Bidang Seni, Musik, Dan Sastra"
+    ];
+
+    const options = ["Sangat Tidak Sesuai", "Tidak Sesuai", "Netral", "Sesuai", "Sangat Sesuai"];
+    let answers = new Array(questions.length).fill(null);
+    let currentIdx = 0;
+    let userName = "";
+
+    function startTest() {
+        userName = document.getElementById('user-name').value.trim();
+        if(!userName) return alert("Masukkan Nama!");
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('test-content').style.display = 'block';
+        init();
+    }
+
+    function init() {
+        const wrapper = document.getElementById('q-wrapper');
+        const grid = document.getElementById('q-grid');
+        questions.forEach((q, i) => {
+            const div = document.createElement('div');
+            div.className = `question-box ${i===0?'active':''}`;
+            div.id = `qbox-${i}`;
+            let optsHtml = options.map((opt, v) => 
+                `<div class="option" id="opt-${i}-${v+1}" onclick="select(${i}, ${v+1})"><span class="opt-num">${v+1}</span> ${opt}</div>`
+            ).join("");
+            div.innerHTML = `<div class="question-text">${i+1}. Saya adalah orang yang ${q}</div><div class="opt-container">${optsHtml}</div>`;
+            wrapper.appendChild(div);
+
+            const gItem = document.createElement('div');
+            gItem.className = 'grid-item'; gItem.id = `grid-${i}`; gItem.innerText = i+1;
+            gItem.onclick = () => jump(i);
+            grid.appendChild(gItem);
+        });
+        updateGrid();
+    }
+
+    function select(idx, val) {
+        answers[idx] = val;
+        for(let j=1; j<=5; j++) document.getElementById(`opt-${idx}-${j}`).classList.remove('selected');
+        document.getElementById(`opt-${idx}-${val}`).classList.add('selected');
+        document.getElementById(`grid-${idx}`).classList.add('filled');
+        if(currentIdx < questions.length - 1) setTimeout(() => jump(currentIdx + 1), 200);
+        if(answers.filter(a => a !== null).length === questions.length) document.getElementById('finish-btn').style.display = 'block';
+    }
+
+    function jump(idx) {
+        document.querySelectorAll('.question-box').forEach(b => b.classList.remove('active'));
+        currentIdx = idx;
+        document.getElementById(`qbox-${idx}`).classList.add('active');
+        updateGrid();
+    }
+
+    function updateGrid() {
+        document.querySelectorAll('.grid-item').forEach(i => i.classList.remove('current'));
+        document.getElementById(`grid-${currentIdx}`).classList.add('current');
+    }
+
+    function checkFinish() {
+        document.getElementById('test-content').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+
+    function downloadTXT() {
+        let text = "REKAP BIG FIVE - PRC\nNAMA : " + userName.toUpperCase() + "\n---\n";
+        answers.forEach((a, i) => { text += `${i+1}:${a}\n`; });
+        const blob = new Blob([text], {type:'text/plain'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `BFI_${userName.replace(/\s+/g,'_')}.txt`; a.click();
+    }
+</script>
+</body>
+</html>

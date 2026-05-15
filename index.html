@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSYMETRIC.ID | Digital Assessment Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #d4af37;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Login Screen */
+        #login-screen {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .brand-logo {
+            font-size: 2em;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid var(--text-dim);
+            background: #0f172a;
+            color: white;
+            text-align: center;
+        }
+
+        button {
+            background: var(--accent);
+            color: var(--primary-bg);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        /* Main Menu */
+        #main-menu {
+            display: none;
+            width: 100%;
+            max-width: 900px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .header-menu {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .test-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            text-decoration: none;
+            color: white;
+            transition: 0.3s;
+            border-left: 5px solid var(--accent);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .test-card:hover {
+            background: #334155;
+            transform: scale(1.03);
+        }
+
+        .test-card h3 {
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+
+        .test-card p {
+            font-size: 0.9em;
+            color: var(--text-dim);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="brand-logo">PSYMETRIC.ID</div>
+        <p style="color: var(--text-dim);">Silahkan masukkan kode akses</p>
+        <input type="password" id="passInput" placeholder="Password">
+        <br>
+        <button onclick="checkPass()">MASUK</button>
+    </div>
+
+    <div id="main-menu">
+        <div class="header-menu">
+            <div class="brand-logo">PSYMETRIC.ID</div>
+            <p>Sistem Informasi Penilaian Psikologi Digital</p>
+        </div>
+
+        <div class="grid-container">
+            <a href="mmpi2.html" class="test-card">
+                <h3>MMPI-2</h3>
+                <p>Minnesota Multiphasic Personality Inventory - 567 Soal</p>
+            </a>
+
+            <a href="epps.html" class="test-card">
+                <h3>EPPS</h3>
+                <p>Edwards Personal Preference Schedule</p>
+            </a>
+
+            <a href="mbti_altes.html" class="test-card">
+                <h3>MBTI</h3>
+                <p>Myers-Briggs Type Indicator (70 Soal)</p>
+            </a>
+
+            <a href="big5_altes.html" class="test-card">
+                <h3>BIG FIVE</h3>
+                <p>Five Factor Model (Ocean Inventory)</p>
+            </a>
+
+            <a href="riasec_holland_altes.html" class="test-card">
+                <h3>RIASEC</h3>
+                <p>Holland Occupational Themes (Minat Karir)</p>
+            </a>
+
+            <a href="rmib_altes.html" class="test-card">
+                <h3>RMIB</h3>
+                <p>Rothwell Miller Interest Blank</p>
+            </a>
+
+            <a href="pauli.teskoran.html" class="test-card">
+                <h3>TES KORAN</h3>
+                <p>Tes Pauli / Kecermatan Sikap Kerja</p>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function checkPass() {
+            const pass = document.getElementById('passInput').value;
+            // Password sesuai permintaan: psikoanalisa
+            if (pass === "psikoanalisa") {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'block';
+            } else {
+                alert("Password Salah!");
+            }
+        }
+
+        // Support Enter Key
+        document.getElementById('passInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkPass();
+            }
+        });
+    </script>
+</body>
+</html>

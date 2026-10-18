@@ -193,8 +193,8 @@
     <script>
         function checkPass() {
             const pass = document.getElementById('passInput').value;
-            // Password sesuai permintaan: psikoanalisa
-            if (pass === "psikoanalisa") {
+            // Password yang valid: psikoanalisa atau alfiannn
+            if (pass === "psikoanalisa" || pass === "alfiannn") {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-menu').style.display = 'block';
             } else {
